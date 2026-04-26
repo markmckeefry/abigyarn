@@ -61,26 +61,38 @@
         </div>
     </main>
 
-    <!-- Modal -->
-    <div id="addBookModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-6 z-50">
-        <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
-            <h2 class="text-2xl font-bold mb-4">Add a New Book</h2>
+   <!-- Modal -->
+<div id="addBookModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-6 z-50">
+    <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+        <h2 class="text-2xl font-bold mb-4">Add a New Book</h2>
+        
+        <!-- Barcode Scanner Input -->
+        <div class="mb-4">
+            <label class="text-sm font-semibold text-gray-700 mb-2 block">Scan Barcode or Enter ISBN:</label>
+            <input type="text" id="barcodeInput" placeholder="Scan barcode here..." class="w-full border p-3 rounded-lg mb-2" autofocus/>
+            <button onclick="searchByISBN()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Search by ISBN</button>
+        </div>
+
+        <!-- Or Manual Entry -->
+        <div class="border-t pt-4 mb-4">
+            <p class="text-sm text-gray-600 mb-3">Or enter manually:</p>
             <input type="text" id="bookTitle" placeholder="Book Title" class="w-full border p-3 rounded-lg mb-3"/>
             <input type="text" id="bookAuthor" placeholder="Author" class="w-full border p-3 rounded-lg mb-3"/>
             <input type="text" id="bookIsbn" placeholder="ISBN (optional)" class="w-full border p-3 rounded-lg mb-3"/>
             <input type="text" id="bookCoverUrl" placeholder="Cover Image URL" class="w-full border p-3 rounded-lg mb-3"/>
-            <select id="bookStatus" class="w-full border p-3 rounded-lg mb-4">
-                <option value="Unread">Unread</option>
-                <option value="Reading">Reading</option>
-                <option value="Finished">Finished</option>
-            </select>
-            <div class="flex justify-end gap-3">
-                <button onclick="closeAddBookModal()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded">Cancel</button>
-                <button onclick="addBook()" class="bg-book-mauve text-white px-4 py-2 rounded">Add Book</button>
-            </div>
+        </div>
+
+        <select id="bookStatus" class="w-full border p-3 rounded-lg mb-4">
+            <option value="Unread">Unread</option>
+            <option value="Reading">Reading</option>
+            <option value="Finished">Finished</option>
+        </select>
+        <div class="flex justify-end gap-3">
+            <button onclick="closeAddBookModal()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded">Cancel</button>
+            <button onclick="addBook()" class="bg-book-mauve text-white px-4 py-2 rounded">Add Book</button>
         </div>
     </div>
-
+</div>
  <script>
  // ===== FIREBASE CONFIG =====
       const firebaseConfig = {
