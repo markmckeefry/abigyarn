@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A BiG YaRN - Library Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'book-mauve': '#A17D83',
+                        'book-mauve-light': '#B69096',
+                        'book-cream': '#FAF6F1',
+                    },
+                    fontFamily: {
+                        'serif': ['Merriweather', 'serif'],
+                        'sans': ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #FAF6F1; }
+        h1, h2, h3 { font-family: 'Merriweather', serif; color: #A17D83; }
+    </style>
+</head>
+<body class="p-6 md:p-12">
+
+    <header class="flex flex-col md:flex-row md:items-center md:justify-between pb-10 border-b border-gray-200 mb-10">
+        <div>
+            <h1 class="text-5xl font-bold">
+                a <span class="text-4xl">BiG</span> <span class="text-4xl">YaRN</span>
+            </h1>
+            <p class="text-gray-600 mt-2">A minimal library tracker</p>
+        </div>
+        <div class="mt-6 md:mt-0 flex gap-4">
+            <button onclick="openAddBookModal()" class="bg-book-mauve text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-book-mauve-light transition flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add New Book
+            </button>
+        </div>
+    </header>
+
+    <section class="mb-12">
+        <div class="flex border-b border-gray-200 gap-6">
+            <button class="pb-3 border-b-2 border-book-mauve text-book-mauve font-semibold text-lg">My Library</button>
+        </div>
+    </section>
+
+    <main>
+        <div id="bookGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            <div class="text-center col-span-full py-12">
+                <p class="text-gray-500">Loading your books...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="addBookModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-6 z-50">
+        <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+            <h2 class="text-2xl font-bold mb-4">Add a New Book</h2>
+            <input type="text" id="bookTitle" placeholder="Book Title" class="w-full border p-3 rounded-lg mb-3"/>
+            <input type="text" id="bookAuthor" placeholder="Author" class="w-full border p-3 rounded-lg mb-3"/>
+            <input type="text" id="bookIsbn" placeholder="ISBN (optional)" class="w-full border p-3 rounded-lg mb-3"/>
+            <input type="text" id="bookCoverUrl" placeholder="Cover Image URL" class="w-full border p-3 rounded-lg mb-3"/>
+            <select id="bookStatus" class="w-full border p-3 rounded-lg mb-4">
+                <option value="Unread">Unread</option>
+                <option value="Reading">Reading</option>
+                <option value="Finished">Finished</option>
+            </select>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeAddBookModal()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded">Cancel</button>
+                <button onclick="addBook()" class="bg-book-mauve text-white px-4 py-2 rounded">Add Book</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== FIREBASE CONFIG =====
+        // REPLACE THESE WITH YOUR FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ===== LOAD BOOKS =====
+        async function loadBooks() {
+            const bookGrid = document.getElementById('bookGrid');
+            try {
+                const snapshot = await db.collection('books').get();
+                bookGrid.innerHTML = '';
+
+                if (snapshot.empty) {
+                    bookGrid.innerHTML = '<div class="text-center col-span-full py-12"><p class="text-gray-500">No books yet. Add one to get started!</p></div>';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const book = doc.data();
+                    const statusColor = book.status === 'Reading' ? 'bg-green-100 text-green-800' : 
+                                       book.status === 'Finished' ? 'bg-book-mauve/10 text-book-mauve' : 
+                                       'bg-gray-100 text-gray-800';
+
+                    bookGrid.innerHTML += `
+                        <div class="book-entry bg-white p-4 rounded-xl shadow hover:shadow-lg transition cursor-pointer border border-gray-100 flex flex-col gap-3">
+                            <img src="${book.coverUrl}" alt="${book.title}" class="rounded-lg w-full h-auto object-cover aspect-[2/3]" onerror="this.src='https://via.placeholder.com/150x225?text=No+Cover'"/>
+                            <div class="text-center">
+                                <h3 class="font-bold text-gray-900 leading-tight text-sm">${book.title}</h3>
+                                <p class="text-xs text-gray-600">${book.author}</p>
+                                <span class="inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${statusColor}">${book.status}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading books:', error);
+                bookGrid.innerHTML = '<div class="text-center col-span-full py-12"><p class="text-red-500">Error loading books. Check your Firebase config.</p></div>';
+            }
+        }
+
+        // ===== MODAL FUNCTIONS =====
+        function openAddBookModal() {
+            document.getElementById('addBookModal').classList.remove('hidden');
+            document.getElementById('addBookModal').classList.add('flex');
+        }
+
+        function closeAddBookModal() {
+            document.getElementById('addBookModal').classList.add('hidden');
+            document.getElementById('addBookModal').classList.remove('flex');
+            // Clear form
+            document.getElementById('bookTitle').value = '';
+            document.getElementById('bookAuthor').value = '';
+            document.getElementById('bookIsbn').value = '';
+            document.getElementById('bookCoverUrl').value = '';
+            document.getElementById('bookStatus').value = 'Unread';
+        }
+
+        // ===== ADD BOOK =====
+        async function addBook() {
+            const title = document.getElementById('bookTitle').value.trim();
+            const author = document.getElementById('bookAuthor').value.trim();
+            const isbn = document.getElementById('bookIsbn').value.trim();
+            const coverUrl = document.getElementById('bookCoverUrl').value.trim();
+            const status = document.getElementById('bookStatus').value;
+
+            if (!title || !author) {
+                alert('Please enter a title and author');
+                return;
+            }
+
+            try {
+                await db.collection('books').add({
+                    title,
+                    author,
+                    isbn: isbn || 'N/A',
+                    coverUrl: coverUrl || 'https://via.placeholder.com/150x225?text=No+Cover',
+                    status,
+                    createdAt: new Date()
+                });
+                closeAddBookModal();
+                loadBooks();
+            } catch (error) {
+                console.error('Error adding book:', error);
+                alert('Error adding book. Check console.');
+            }
+        }
+
+        // Load books on page load
+        loadBooks();
+    </script>
+
+</body>
+</html>
