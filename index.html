@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>A BiG YaRN - Library Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js"></script>
+    <!-- Firebase Compat SDK (simpler for HTML projects) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -61,238 +63,187 @@
         </div>
     </main>
 
-   <!-- Modal -->
-<div id="addBookModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-6 z-50">
-    <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
-        <h2 class="text-2xl font-bold mb-4">Add a New Book</h2>
-        
-        <!-- Barcode Scanner Input -->
-        <div class="mb-4">
-            <label class="text-sm font-semibold text-gray-700 mb-2 block">Scan Barcode or Enter ISBN:</label>
-            <input type="text" id="barcodeInput" placeholder="Scan barcode here..." class="w-full border p-3 rounded-lg mb-2" autofocus/>
-            <button onclick="searchByISBN()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Search by ISBN</button>
-        </div>
+    <!-- Modal -->
+    <div id="addBookModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-6 z-50">
+        <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+            <h2 class="text-2xl font-bold mb-4">Add a New Book</h2>
+            
+            <div class="mb-4">
+                <label class="text-sm font-semibold text-gray-700 mb-2 block">Scan Barcode or Enter ISBN:</label>
+                <input type="text" id="barcodeInput" placeholder="Scan barcode here..." class="w-full border p-3 rounded-lg mb-2" autofocus/>
+                <button onclick="searchByISBN()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Search by ISBN</button>
+            </div>
 
-        <!-- Or Manual Entry -->
-        <div class="border-t pt-4 mb-4">
-            <p class="text-sm text-gray-600 mb-3">Or enter manually:</p>
-            <input type="text" id="bookTitle" placeholder="Book Title" class="w-full border p-3 rounded-lg mb-3"/>
-            <input type="text" id="bookAuthor" placeholder="Author" class="w-full border p-3 rounded-lg mb-3"/>
-            <input type="text" id="bookIsbn" placeholder="ISBN (optional)" class="w-full border p-3 rounded-lg mb-3"/>
-            <input type="text" id="bookCoverUrl" placeholder="Cover Image URL" class="w-full border p-3 rounded-lg mb-3"/>
-        </div>
+            <div class="border-t pt-4 mb-4">
+                <p class="text-sm text-gray-600 mb-3">Or enter manually:</p>
+                <input type="text" id="bookTitle" placeholder="Book Title" class="w-full border p-3 rounded-lg mb-3"/>
+                <input type="text" id="bookAuthor" placeholder="Author" class="w-full border p-3 rounded-lg mb-3"/>
+                <input type="text" id="bookIsbn" placeholder="ISBN (optional)" class="w-full border p-3 rounded-lg mb-3"/>
+                <input type="text" id="bookCoverUrl" placeholder="Cover Image URL" class="w-full border p-3 rounded-lg mb-3"/>
+            </div>
 
-        <select id="bookStatus" class="w-full border p-3 rounded-lg mb-4">
-            <option value="Unread">Unread</option>
-            <option value="Reading">Reading</option>
-            <option value="Finished">Finished</option>
-        </select>
-        <div class="flex justify-end gap-3">
-            <button onclick="closeAddBookModal()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded">Cancel</button>
-            <button onclick="addBook()" class="bg-book-mauve text-white px-4 py-2 rounded">Add Book</button>
+            <select id="bookStatus" class="w-full border p-3 rounded-lg mb-4">
+                <option value="Unread">Unread</option>
+                <option value="Reading">Reading</option>
+                <option value="Finished">Finished</option>
+            </select>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeAddBookModal()" class="bg-gray-100 text-gray-700 px-4 py-2 rounded">Cancel</button>
+                <button onclick="addBook()" class="bg-book-mauve text-white px-4 py-2 rounded">Add Book</button>
+            </div>
         </div>
     </div>
-</div>
- <script>
- // ===== FIREBASE CONFIG =====
-      const firebaseConfig = {
-    apiKey: "AIzaSyBPry6ik9r7zuvKQDlg34XJP2EQ82NH_-U",
-    authDomain: "abigyarn.firebaseapp.com",
-    projectId: "abigyarn",
-    storageBucket: "abigyarn.firebasestorage.app",
-    messagingSenderId: "1051570958163",
-    appId: "1:1051570958163:web:85337e2eff7ff747733ba6"
-  };
 
-    // Initialize Firebase FIRST
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    <script>
+        // ===== FIREBASE INITIALIZATION =====
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "abigyarn",
+            storageBucket: "abigyarn.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-    // ===== LOAD BOOKS =====
-    async function loadBooks() {
-        const bookGrid = document.getElementById('bookGrid');
-        try {
-            const snapshot = await db.collection('books').get();
-            bookGrid.innerHTML = '';
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-            if (snapshot.empty) {
-                bookGrid.innerHTML = '<div class="text-center col-span-full py-12"><p class="text-gray-500">No books yet. Add one to get started!</p></div>';
-                return;
-            }
+        // ===== LOAD BOOKS =====
+        async function loadBooks() {
+            const bookGrid = document.getElementById('bookGrid');
+            try {
+                const snapshot = await db.collection('books').get();
+                bookGrid.innerHTML = '';
 
-            snapshot.forEach(doc => {
-                const book = doc.data();
-                const statusColor = book.status === 'Reading' ? 'bg-green-100 text-green-800' : 
-                                   book.status === 'Finished' ? 'bg-book-mauve/10 text-book-mauve' : 
-                                   'bg-gray-100 text-gray-800';
-
-                bookGrid.innerHTML += `
-                    <div class="book-entry bg-white p-4 rounded-xl shadow hover:shadow-lg transition cursor-pointer border border-gray-100 flex flex-col gap-3">
-                        <img src="${book.coverUrl}" alt="${book.title}" class="rounded-lg w-full h-auto object-cover aspect-[2/3]" onerror="this.src='https://via.placeholder.com/150x225?text=No+Cover'"/>
-                        <div class="text-center">
-                            <h3 class="font-bold text-gray-900 leading-tight text-sm">${book.title}</h3>
-                            <p class="text-xs text-gray-600">${book.author}</p>
-                            <span class="inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${statusColor}">${book.status}</span>
-                        </div>
-                    </div>
-                `;
-            });
-        } catch (error) {
-            console.error('Error loading books:', error);
-            bookGrid.innerHTML = '<div class="text-center col-span-full py-12"><p class="text-red-500">Error loading books. Check your Firebase config.</p></div>';
-        }
-    }
-
-    // ===== MODAL FUNCTIONS =====
-    function openAddBookModal() {
-        document.getElementById('addBookModal').classList.remove('hidden');
-        document.getElementById('addBookModal').classList.add('flex');
-        document.getElementById('barcodeInput').focus();
-    }
-
-    function closeAddBookModal() {
-        document.getElementById('addBookModal').classList.add('hidden');
-        document.getElementById('addBookModal').classList.remove('flex');
-        // Clear form
-        document.getElementById('bookTitle').value = '';
-        document.getElementById('bookAuthor').value = '';
-        document.getElementById('bookIsbn').value = '';
-        document.getElementById('bookCoverUrl').value = '';
-        document.getElementById('bookStatus').value = 'Unread';
-        document.getElementById('barcodeInput').value = '';
-    }
-
-    // ===== ISBN LOOKUP =====
-    async function searchByISBN() {
-        const isbn = document.getElementById('barcodeInput').value.trim();
-        
-        if (!isbn) {
-            alert('Please scan or enter an ISBN');
-            return;
-        }
-
-        try {
-            const response = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
-            
-            if (!response.ok) {
-                alert('Book not found. Please enter details manually.');
-                return;
-            }
-
-            const book = await response.json();
-            
-            document.getElementById('bookTitle').value = book.title || '';
-            document.getElementById('bookAuthor').value = 
-                book.authors && book.authors[0] ? book.authors[0].name : '';
-            document.getElementById('bookIsbn').value = isbn;
-            
-            if (book.covers && book.covers.length > 0) {
-                document.getElementById('bookCoverUrl').value = 
-                    `https://covers.openlibrary.org/b/id/${book.covers[0]}-M.jpg`;
-            }
-            
-            alert('Book found! Review details and save.');
-            document.getElementById('barcodeInput').value = '';
-        } catch (error) {
-            console.error('Error looking up ISBN:', error);
-            alert('Error looking up book. Please enter details manually.');
-        }
-    }
-
-    // ===== ADD BOOK =====
-    async function addBook() {
-        const title = document.getElementById('bookTitle').value.trim();
-        const author = document.getElementById('bookAuthor').value.trim();
-        const isbn = document.getElementById('bookIsbn').value.trim();
-        const coverUrl = document.getElementById('bookCoverUrl').value.trim();
-        const status = document.getElementById('bookStatus').value;
-
-        if (!title || !author) {
-            alert('Please enter a title and author');
-            return;
-        }
-
-        try {
-            await db.collection('books').add({
-                title,
-                author,
-                isbn: isbn || 'N/A',
-                coverUrl: coverUrl || 'https://via.placeholder.com/150x225?text=No+Cover',
-                status,
-                createdAt: new Date()
-            });
-            closeAddBookModal();
-            loadBooks();
-            alert('Book added successfully!');
-        } catch (error) {
-            console.error('Error adding book:', error);
-            alert('Error adding book: ' + error.message);
-        }
-    }
-
-    // Allow Enter key to trigger ISBN search
-    document.addEventListener('DOMContentLoaded', function() {
-        const barcodeInput = document.getElementById('barcodeInput');
-        if (barcodeInput) {
-            barcodeInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    searchByISBN();
+                if (snapshot.empty) {
+                    bookGrid.innerHTML = '<div class="text-center col-span-full py-12"><p class="text-gray-500">No books yet. Add one to get started!</p></div>';
+                    return;
                 }
-            });
-        }
-    });
 
-    // Load books on page load
-    loadBooks
-        // ===== ISBN LOOKUP =====
-async function searchByISBN() {
-    const isbn = document.getElementById('barcodeInput').value.trim();
-    
-    if (!isbn) {
-        alert('Please scan or enter an ISBN');
-        return;
-    }
+                snapshot.forEach(doc => {
+                    const book = doc.data();
+                    const statusColor = book.status === 'Reading' ? 'bg-green-100 text-green-800' : 
+                                       book.status === 'Finished' ? 'bg-book-mauve/10 text-book-mauve' : 
+                                       'bg-gray-100 text-gray-800';
 
-    try {
-        // Using Open Library API (free, no key needed)
-        const response = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
-        
-        if (!response.ok) {
-            alert('Book not found. Please enter details manually.');
-            return;
-        }
-
-        const book = await response.json();
-        
-        // Populate the form with book data
-        document.getElementById('bookTitle').value = book.title || '';
-        document.getElementById('bookAuthor').value = 
-            book.authors && book.authors[0] ? book.authors[0].name : '';
-        document.getElementById('bookIsbn').value = isbn;
-        
-        // Get cover image
-        if (book.covers && book.covers.length > 0) {
-            document.getElementById('bookCoverUrl').value = 
-                `https://covers.openlibrary.org/b/id/${book.covers[0]}-M.jpg`;
-        }
-        
-        alert('Book found! Review details and save.');
-        document.getElementById('barcodeInput').value = ''; // Clear barcode input
-    } catch (error) {
-        console.error('Error looking up ISBN:', error);
-        alert('Error looking up book. Please enter details manually.');
-    }
-}
-
-// Allow Enter key to trigger search
-document.addEventListener('DOMContentLoaded', function() {
-    const barcodeInput = document.getElementById('barcodeInput');
-    if (barcodeInput) {
-        barcodeInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                searchByISBN();
+                    bookGrid.innerHTML += `
+                        <div class="book-entry bg-white p-4 rounded-xl shadow hover:shadow-lg transition cursor-pointer border border-gray-100 flex flex-col gap-3">
+                            <img src="${book.coverUrl}" alt="${book.title}" class="rounded-lg w-full h-auto object-cover aspect-[2/3]" onerror="this.src='https://via.placeholder.com/150x225?text=No+Cover'"/>
+                            <div class="text-center">
+                                <h3 class="font-bold text-gray-900 leading-tight text-sm">${book.title}</h3>
+                                <p class="text-xs text-gray-600">${book.author}</p>
+                                <span class="inline-block mt-2 text-xs px-2 py-0.5 rounded-full ${statusColor}">${book.status}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Error loading books:', error);
+                bookGrid.innerHTML = '<div class="text-center col-span-full py-12"><p class="text-red-500">Error: ' + error.message + '</p></div>';
             }
+        }
+
+        // ===== MODAL FUNCTIONS =====
+        function openAddBookModal() {
+            document.getElementById('addBookModal').classList.remove('hidden');
+            document.getElementById('addBookModal').classList.add('flex');
+            document.getElementById('barcodeInput').focus();
+        }
+
+        function closeAddBookModal() {
+            document.getElementById('addBookModal').classList.add('hidden');
+            document.getElementById('addBookModal').classList.remove('flex');
+            document.getElementById('bookTitle').value = '';
+            document.getElementById('bookAuthor').value = '';
+            document.getElementById('bookIsbn').value = '';
+            document.getElementById('bookCoverUrl').value = '';
+            document.getElementById('bookStatus').value = 'Unread';
+            document.getElementById('barcodeInput').value = '';
+        }
+
+        // ===== ISBN LOOKUP =====
+        async function searchByISBN() {
+            const isbn = document.getElementById('barcodeInput').value.trim();
+            
+            if (!isbn) {
+                alert('Please scan or enter an ISBN');
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://openlibrary.org/isbn/${isbn}.json`);
+                
+                if (!response.ok) {
+                    alert('Book not found. Please enter details manually.');
+                    return;
+                }
+
+                const book = await response.json();
+                document.getElementById('bookTitle').value = book.title || '';
+                document.getElementById('bookAuthor').value = 
+                    book.authors && book.authors[0] ? book.authors[0].name : '';
+                document.getElementById('bookIsbn').value = isbn;
+                
+                if (book.covers && book.covers.length > 0) {
+                    document.getElementById('bookCoverUrl').value = 
+                        `https://covers.openlibrary.org/b/id/${book.covers[0]}-M.jpg`;
+                }
+                
+                alert('Book found! Review details and save.');
+                document.getElementById('barcodeInput').value = '';
+            } catch (error) {
+                console.error('Error looking up ISBN:', error);
+                alert('Error looking up book. Please enter details manually.');
+            }
+        }
+
+        // ===== ADD BOOK =====
+        async function addBook() {
+            const title = document.getElementById('bookTitle').value.trim();
+            const author = document.getElementById('bookAuthor').value.trim();
+            const isbn = document.getElementById('bookIsbn').value.trim();
+            const coverUrl = document.getElementById('bookCoverUrl').value.trim();
+            const status = document.getElementById('bookStatus').value;
+
+            if (!title || !author) {
+                alert('Please enter a title and author');
+                return;
+            }
+
+            try {
+                await db.collection('books').add({
+                    title,
+                    author,
+                    isbn: isbn || 'N/A',
+                    coverUrl: coverUrl || 'https://via.placeholder.com/150x225?text=No+Cover',
+                    status,
+                    createdAt: new Date()
+                });
+                closeAddBookModal();
+                loadBooks();
+                alert('Book added successfully!');
+            } catch (error) {
+                console.error('Error adding book:', error);
+                alert('Error adding book: ' + error.message);
+            }
+        }
+
+        // ===== INITIALIZATION =====
+        // Allow Enter key to trigger ISBN search
+        document.addEventListener('DOMContentLoaded', function() {
+            const barcodeInput = document.getElementById('barcodeInput');
+            if (barcodeInput) {
+                barcodeInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchByISBN();
+                    }
+                });
+            }
+            // Load books when page loads
+            loadBooks();
         });
-    }
-});
-</script>
+    </script>
+
+</body>
+</html>
