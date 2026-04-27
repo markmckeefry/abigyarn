@@ -3,93 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A BiG YaRN - Library Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase Compat SDK (simpler for HTML projects) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-    
-    <!-- Barcode Scanner Libraries -->
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'book-mauve': '#A17D83',
-                        'book-mauve-light': '#B69096',
-                        'book-cream': '#FAF6F1',
-                    },
-                    fontFamily: {
-                        'serif': ['Merriweather', 'serif'],
-                        'sans': ['Inter', 'sans-serif'],
-                    },
-                },
-            },
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #FAF6F1; }
-        h1, h2, h3 { font-family: 'Merriweather', serif; color: #A17D83; }
-    </style>
+    <title>Book Inventory</title>
+    <!-- Firebase libraries -->
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.0/JsBarcode.all.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body class="p-6 md:p-12">
-
-    <header class="flex flex-col md:flex-row md:items-center md:justify-between pb-10 border-b border-gray-200 mb-10">
-        <div>
-            <h1 class="text-5xl font-bold">
-                a <span class="text-4xl">BiG</span> <span class="text-4xl">YaRN</span>
-            </h1>
-            <p class="text-gray-600 mt-2">A minimal library tracker</p>
-        </div>
-        <div class="mt-6 md:mt-0 flex gap-4">
-            <button onclick="openAddBookModal()" class="bg-book-mauve text-white px-6 py-3 rounded-lg font-semibold shadow-md hover:bg-book-mauve-light transition flex items-center gap-2">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                Add New Book
-            </button>
-        </div>
+<body>
+    <header>
+        <h1>Book Inventory</h1>
+        <button onclick="openAddBookModal()">Add Book</button>
     </header>
-
-    <section class="mb-12">
-        <div class="flex border-b border-gray-200 gap-6">
-            <button class="pb-3 border-b-2 border-book-mauve text-book-mauve font-semibold text-lg">My Library</button>
-        </div>
-    </section>
-
     <main>
-        <div id="bookGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-            <div class="text-center col-span-full py-12">
-                <p class="text-gray-500">Loading your books...</p>
-            </div>
-        </div>
+        <ul id="book-list"></ul>
     </main>
 
-    <!-- Modal -->
-    <div id="addBookModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-6 z-50">
-        <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 class="text-2xl font-bold mb-4">Add a New Book</h2>
-            
-            <!-- Tab Buttons -->
-            <div class="flex gap-2 mb-4 border-b">
-                <button onclick="switchScanMode('camera')" id="cameraTab" class="pb-2 px-4 border-b-2 border-book-mauve text-book-mauve font-semibold">📷 Camera</button>
-                <button onclick="switchScanMode('manual')" id="manualTab" class="pb-2 px-4 border-b-2 border-transparent text-gray-500">✏️ Manual</button>
-            </div>
+    <div id="add-book-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddBookModal()">&times;</span>
+            <h2>Add Book</h2>
+            <input type="text" id="isbn" placeholder="ISBN" />
+            <input type="text" id="title" placeholder="Title" />
+            <input type="text" id="author" placeholder="Author" />
+            <button onclick="addBook()">Add</button>
+        </div>
+    </div>
 
-            <!-- Camera Mode -->
-            <div id="cameraMode" class="mb-4">
-                <div id="reader" style="width: 100%; height: 300px; border: 2px solid #ccc; border-radius: 8px; margin-bottom: 12px;"></div>
-                <input type="text" id="barcodeInput" placeholder="Or paste ISBN here..." class="w-full border p-3 rounded-lg mb-2"/>
-                <button onclick="manualSearch()" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Search ISBN</button>
-            </div>
+    <script>
+         // ===== FIREBASE CONFIG =====
+      const firebaseConfig = {
+    apiKey: "AIzaSyBPry6ik9r7zuvKQDlg34XJP2EQ82NH_-U",
+    authDomain: "abigyarn.firebaseapp.com",
+    projectId: "abigyarn",
+    storageBucket: "abigyarn.firebasestorage.app",
+    messagingSenderId: "1051570958163",
+    appId: "1:1051570958163:web:85337e2eff7ff747733ba6"
+        };
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-            <!-- Manual Entry Mode -->
-            <div id="manualMode" class="mb-4 hidden">
-                <p class="text-sm text-gray-600 mb-3">Enter book details:</p>
-                <input type="text" id="bookTitle" placeholder="Book Title" class="w-full border p-3 rounded-lg mb-3"/>
-                <input type="text" id="bookAuthor" placeholder="Author" class="w-full border p-3 rounded-lg mb-3"/>
-                <input type="text" id="bookIsbn" placeholder="ISBN (optional)" class="w-full border p-3 rounded-lg mb-3"/>
-                <input type="text
-
+        function loadBooks() {
+            // Fetch books from Firebase and populate the book list
+            database.ref('books/').once('value').then((snapshot) => {
+                const books = snapshot.val();
+                const bookList = document.getElementById('book-list');
+                bookList.innerHTML = '';
+                for (const id in books) {
+                    const book = books[id];
+                    const listItem = document.createElement('li');
+                    listItem.textContent = book.title + ' by ' + book.author;
+                    listItem.innerHTML += `<button onclick="deleteBook('${id}')">Delete</button>`;
+                    bookList.appendChild(listItem);
+                }
+            });
+        }
+
+        function deleteBook(id) {
+            // Delete book from Firebase
+            database.ref('books/' + id).remove();
+            loadBooks();
+        }
+
+        function switchScanMode(mode) {
+            // Switch between camera and manual modes
+            // Implement your logic to toggle scanning modes
+        }
+
+        function startScanner() {
+            // Start the camera scanner
+            // Implement your camera using libraries like QuaggaJS or similar
+        }
+
+        function stopScanner() {
+            // Stop the camera scanner
+        }
+
+        function openAddBookModal() {
+            document.getElementById('add-book-modal').style.display = 'block';
+        }
+
+        function closeAddBookModal() {
+            document.getElementById('add-book-modal').style.display = 'none';
+        }
+
+        function searchByISBN() {
+            // Implement search by ISBN
+            // Fetch from Firebase or local storage
+        }
+
+        function manualSearch() {
+            // Implement manual search
+        }
+
+        function addBook() {
+            const isbn = document.getElementById('isbn').value;
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            database.ref('books/').push({ isbn, title, author });
+            closeAddBookModal();
+            loadBooks();
+        }
+
+        // Load books on initial load
+        loadBooks();
+    </script>
+</body>
+</html>
